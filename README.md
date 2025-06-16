@@ -94,9 +94,5 @@ python search_vector_store.py
 2. Excelファイルが存在し、期待される形式であることを確認する
 3. すべての依存関係がuvを使用して正しくインストールされていることを確認する：
    ```bash
-   uv pip install -r requirements.txt
+   uv sync
    ```
-
-## ライセンス
-
-[MITライセンス](LICENSE)
