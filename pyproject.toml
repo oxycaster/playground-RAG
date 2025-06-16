@@ -1,0 +1,13 @@
+[project]
+name = "playground-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas",
+    "openpyxl",
+    "openai",
+    "chromadb",
+    "numpy"
+]
