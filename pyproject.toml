@@ -9,5 +9,6 @@ dependencies = [
     "openpyxl",
     "openai",
     "chromadb",
-    "numpy"
+    "numpy",
+    "fastmcp",
 ]
