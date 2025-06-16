@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from openai import OpenAI
 import chromadb
+from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 import numpy as np
 import time
@@ -59,9 +60,15 @@ def main():
         print("Make sure you have set the OPENAI_API_KEY environment variable")
         return
 
-    # Initialize ChromaDB
+    # Initialize ChromaDB with persistence
     try:
-        chroma_client = chromadb.Client()
+        # Create chroma_db directory if it doesn't exist
+        os.makedirs("chroma_db", exist_ok=True)
+
+        # Initialize PersistentClient to store data in chroma_db directory
+        chroma_client = chromadb.PersistentClient(path="chroma_db")
+        print("Successfully initialized ChromaDB with persistence in 'chroma_db' directory")
+
         # Use OpenAI embeddings
         openai_ef = embedding_functions.OpenAIEmbeddingFunction(
             api_key=os.environ.get("OPENAI_API_KEY"),
