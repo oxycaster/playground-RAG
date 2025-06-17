@@ -42,6 +42,37 @@ def combine_columns_text(row, columns):
             texts.append(str(row[col]))
     return " ".join(texts)
 
+def format_question_data(row, question_col, choice_cols, answer_col):
+    """Format question data according to the specified template"""
+    # Extract question text
+    question_text = str(row[question_col]) if question_col in row and not pd.isna(row[question_col]) else ""
+
+    # Extract choices text
+    choices_text = []
+    choice_labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+    for i, col in enumerate(choice_cols):
+        if i < len(choice_labels) and col in row and not pd.isna(row[col]):
+            choices_text.append(f"{choice_labels[i]}. {row[col]}")
+
+    # Extract correct answer
+    correct_answer = str(row[answer_col]) if answer_col in row and not pd.isna(row[answer_col]) else ""
+
+    # Format according to template
+    formatted_text = f"""<question>
+{question_text}
+</question>
+
+<choices>
+{chr(10).join(choices_text)}
+</choices>
+
+<correct_answer>
+{correct_answer}
+</correct_answer>"""
+
+    return formatted_text
+
 def main():
     # Path to the Excel file
     excel_file = "data/名称未設定.xlsx"
@@ -94,12 +125,20 @@ def main():
         columns = df.columns.tolist()
         print(f"Columns: {columns}")
 
-        # Identify column AJ (36th column, index 35)
-        if len(columns) >= 36:
-            target_columns = [columns[35]]  # 36th column (index 35)
-            print(f"Target column (AJ - 36th column): {target_columns}")
+        # Identify required columns:
+        # - Question: 36th column (index 35)
+        # - Choices: 38th-44th columns (indices 37-43)
+        # - Correct answer: 45th column (index 44)
+        if len(columns) >= 45:
+            question_col = columns[35]  # 36th column (index 35)
+            choice_cols = [columns[37], columns[38], columns[39], columns[40], 
+                          columns[41], columns[42], columns[43]]  # 38th-44th columns
+            answer_col = columns[44]  # 45th column (index 44)
+            print(f"Question column (36th column): {question_col}")
+            print(f"Choice columns (38th-44th columns): {choice_cols}")
+            print(f"Answer column (45th column): {answer_col}")
         else:
-            print("Error: Excel file does not have at least 36 columns")
+            print("Error: Excel file does not have at least 45 columns")
             print(f"File only has {len(columns)} columns")
             return
 
@@ -111,15 +150,15 @@ def main():
     print("Processing rows and creating embeddings...")
     for index, row in df.iterrows():
         try:
-            # Get text from AJ column (36th column)
-            combined_text = combine_columns_text(row, target_columns)
+            # Format question data according to template
+            formatted_text = format_question_data(row, question_col, choice_cols, answer_col)
 
-            if not combined_text:
+            if not formatted_text:
                 print(f"Skipping row {index+1} - no text data")
                 continue
 
             # Get embedding
-            embedding = get_embedding(client, combined_text)
+            embedding = get_embedding(client, formatted_text)
 
             if embedding:
                 # Add to ChromaDB
@@ -129,9 +168,10 @@ def main():
                     metadatas=[{
                         "row_index": index + 1,
                         "source": excel_file,
-                        **{col: str(row[col]) for col in target_columns if col in row and not pd.isna(row[col])}
+                        "question": str(row[question_col]) if question_col in row and not pd.isna(row[question_col]) else "",
+                        "correct_answer": str(row[answer_col]) if answer_col in row and not pd.isna(row[answer_col]) else ""
                     }],
-                    documents=[combined_text]
+                    documents=[formatted_text]
                 )
                 print(f"Processed row {index+1}")
             else:
